@@ -32,10 +32,19 @@ function timeLabel(value: string | null | undefined) {
     : new Intl.DateTimeFormat('nl-NL', { hour: '2-digit', minute: '2-digit' }).format(date);
 }
 
+function isUnauthorizedMissionError(error: unknown) {
+  return typeof error === 'object' && error !== null && 'status' in error && error.status === 401;
+}
+
 function Home() {
   const queryClient = useQueryClient();
   const missionQuery = useGetMissionState({
-    query: { queryKey: getGetMissionStateQueryKey(), refetchInterval: 5000, refetchIntervalInBackground: false, retry: false },
+    query: {
+      queryKey: getGetMissionStateQueryKey(),
+      refetchInterval: (query) => query.state.data && !isUnauthorizedMissionError(query.state.error) ? 10000 : false,
+      refetchIntervalInBackground: false,
+      retry: false,
+    },
   });
   const createSession = useCreateMissionSession();
   const endSession = useEndMissionSession();
@@ -161,7 +170,7 @@ function Home() {
   }
 
   if (missionQuery.isLoading && !mission) return <LoadingScreen />;
-  if (!mission || missionQuery.isError) {
+  if (!mission || isUnauthorizedMissionError(missionQuery.error)) {
     return (
       <main className="access-screen noise">
         <div className="access-orbit orbit-one" /><div className="access-orbit orbit-two" />
