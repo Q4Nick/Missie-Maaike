@@ -306,7 +306,44 @@ components:
           format: date-time
         rendezvous:
           $ref: "#/components/schemas/MissionRendezvous"
-      required: [agent, admin, people, groupComplete, puzzles, special, answers, serverNow, rendezvous]
+        current:
+          oneOf:
+            - $ref: "#/components/schemas/MissionCurrent"
+            - type: "null"
+      required: [agent, admin, people, groupComplete, puzzles, special, answers, serverNow, rendezvous, current]
+    MissionClue:
+      type: object
+      properties:
+        index:
+          type: integer
+        title:
+          type: string
+        question:
+          type: string
+        hint:
+          type: string
+        personal:
+          type: boolean
+      required: [index, title, question, hint, personal]
+    MissionCurrent:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum: [clue, waiting, blocked, finished]
+        lead:
+          type: [string, "null"]
+        clue:
+          oneOf:
+            - $ref: "#/components/schemas/MissionClue"
+            - type: "null"
+        unlockAt:
+          type: [string, "null"]
+          format: date-time
+        hintAt:
+          type: [string, "null"]
+          format: date-time
+      required: [stage, lead, clue, unlockAt, hintAt]
     MissionRendezvous:
       type: object
       properties:

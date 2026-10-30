@@ -67,7 +67,20 @@ export const CreateMissionSessionResponse = zod.object({
   "message": zod.string(),
   "location": zod.string().nullable(),
   "destination": zod.string().nullable()
-})
+}),
+  "current": zod.union([zod.object({
+  "stage": zod.enum(['clue', 'waiting', 'blocked', 'finished']),
+  "lead": zod.string().nullable(),
+  "clue": zod.union([zod.object({
+  "index": zod.number().int(),
+  "title": zod.string(),
+  "question": zod.string(),
+  "hint": zod.string(),
+  "personal": zod.boolean()
+}),zod.null()]),
+  "unlockAt": zod.coerce.date().nullable(),
+  "hintAt": zod.coerce.date().nullable()
+}),zod.null()])
 })
 
 
@@ -113,7 +126,20 @@ export const GetMissionStateResponse = zod.object({
   "message": zod.string(),
   "location": zod.string().nullable(),
   "destination": zod.string().nullable()
-})
+}),
+  "current": zod.union([zod.object({
+  "stage": zod.enum(['clue', 'waiting', 'blocked', 'finished']),
+  "lead": zod.string().nullable(),
+  "clue": zod.union([zod.object({
+  "index": zod.number().int(),
+  "title": zod.string(),
+  "question": zod.string(),
+  "hint": zod.string(),
+  "personal": zod.boolean()
+}),zod.null()]),
+  "unlockAt": zod.coerce.date().nullable(),
+  "hintAt": zod.coerce.date().nullable()
+}),zod.null()])
 })
 
 

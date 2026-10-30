@@ -116,6 +116,35 @@ export interface MissionRendezvous {
   destination: string | null;
 }
 
+export type MissionCurrentStage = typeof MissionCurrentStage[keyof typeof MissionCurrentStage];
+
+
+export const MissionCurrentStage = {
+  clue: 'clue',
+  waiting: 'waiting',
+  blocked: 'blocked',
+  finished: 'finished',
+} as const;
+
+export interface MissionClue {
+  index: number;
+  title: string;
+  question: string;
+  hint: string;
+  personal: boolean;
+}
+
+export interface MissionCurrent {
+  stage: MissionCurrentStage;
+  /** @nullable */
+  lead: string | null;
+  clue: MissionClue | null;
+  /** @nullable */
+  unlockAt: string | null;
+  /** @nullable */
+  hintAt: string | null;
+}
+
 export interface MissionState {
   agent: MissionAgent | null;
   admin: boolean;
@@ -127,5 +156,6 @@ export interface MissionState {
   answers: MissionAnswer[];
   serverNow: string;
   rendezvous: MissionRendezvous;
+  current: MissionCurrent | null;
 }
 

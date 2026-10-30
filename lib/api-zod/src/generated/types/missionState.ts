@@ -7,6 +7,7 @@
  */
 import type { MissionAgent } from './missionAgent';
 import type { MissionAnswer } from './missionAnswer';
+import type { MissionCurrent } from './missionCurrent';
 import type { MissionPlayerProgress } from './missionPlayerProgress';
 import type { MissionPuzzle } from './missionPuzzle';
 import type { MissionRendezvous } from './missionRendezvous';
@@ -22,4 +23,5 @@ export interface MissionState {
   answers: MissionAnswer[];
   serverNow: Date;
   rendezvous: MissionRendezvous;
+  current: MissionCurrent | null;
 }
