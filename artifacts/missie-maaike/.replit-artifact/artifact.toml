@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Missie Maaike"
+description = "Een interactieve, tijdgebonden raadselroute voor vier gasten die via gezamenlijke opdrachten naar Maaikes verjaardagsdiner worden geleid."
+version = "1.0.0"
+id = "artifacts/missie-maaike"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25758
+
+[services.development]
+run = "pnpm --filter @workspace/missie-maaike run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/missie-maaike", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/missie-maaike/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25758"
+BASE_PATH = "/"
