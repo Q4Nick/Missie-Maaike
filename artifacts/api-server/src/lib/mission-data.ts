@@ -1,9 +1,9 @@
 export const GAME_DATE='2026-10-31';
 export const AGENTS=[
- {id:'alpha',label:'Michel · Alpha',code:'M31-ALPHA-7K'},
- {id:'bravo',label:'Tiny · Bravo',code:'M31-BRAVO-4Q'},
- {id:'charlie',label:'Nynke · Charlie',code:'M31-CHARLIE-9X'},
- {id:'delta',label:'Younes · Delta',code:'M31-DELTA-2P'},
+ {id:'alpha',label:'Michel',code:'M31-ALPHA-7K'},
+ {id:'bravo',label:'Tiny',code:'M31-BRAVO-4Q'},
+ {id:'charlie',label:'Nynke',code:'M31-CHARLIE-9X'},
+ {id:'delta',label:'Younes',code:'M31-DELTA-2P'},
 ] as const;
 export const FRAGMENTS=['52.21875','28633283','4.87256','8152435787'] as const;
 export const DESTINATION_COORDINATES=`${FRAGMENTS[0]}${FRAGMENTS[1]}, ${FRAGMENTS[2]}${FRAGMENTS[3]}`;

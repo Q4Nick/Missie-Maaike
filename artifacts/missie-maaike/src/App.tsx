@@ -15,6 +15,7 @@ import {
 } from '@workspace/api-client-react';
 import type { MissionState } from '@workspace/api-client-react';
 import {
+  Link,
   Route,
   Switch,
   useLocation,
@@ -36,7 +37,7 @@ function isUnauthorizedMissionError(error: unknown) {
   return typeof error === 'object' && error !== null && 'status' in error && error.status === 401;
 }
 
-function Home() {
+function MissionHome({ adminEntry }: { adminEntry: boolean }) {
   const queryClient = useQueryClient();
   const missionQuery = useGetMissionState({
     query: {
@@ -97,11 +98,17 @@ function Home() {
     event.preventDefault();
     setAccessError('');
     try {
-      await createSession.mutateAsync({ data: { code: code.trim() } });
+      const session = await createSession.mutateAsync({ data: { code: code.trim() } });
+      if (adminEntry && !session.admin) {
+        await endSession.mutateAsync(undefined);
+        setCode('');
+        setAccessError('Deze code hoort bij een speler, niet bij de adminomgeving.');
+        return;
+      }
       setCode('');
       await queryClient.invalidateQueries({ queryKey: getGetMissionStateQueryKey() });
     } catch {
-      setAccessError('Deze toegangscode wordt niet herkend. Controleer je bericht en probeer opnieuw.');
+      setAccessError(adminEntry ? 'De admincode wordt niet herkend. Controleer de code en probeer opnieuw.' : 'Deze toegangscode wordt niet herkend. Controleer je bericht en probeer opnieuw.');
     }
   }
 
@@ -180,13 +187,16 @@ function Home() {
         </header>
         <section className="access-content enter">
           <div className="eyebrow"><span className="eyebrow-line" /> BESLOTEN OPERATIE <span className="eyebrow-line" /></div>
-          <h1 className="access-title display">Vanavond<br /><em>is niets</em><br />toeval.</h1>
-          <p className="access-copy">Vier gasten. Eén geheime opdracht.<br />Maaike rekent op jullie.</p>
+          <Link className="admin-entry-link" href={adminEntry ? '/' : '/admin'}>
+            <span>{adminEntry ? 'Terug naar de missie' : 'Naar de adminomgeving'}</span><ChevronRight size={14} />
+          </Link>
+          <h1 className="access-title display">{adminEntry ? <>Admin<br /><em>omgeving.</em></> : <>Vanavond<br /><em>is niets</em><br />toeval.</>}</h1>
+          <p className="access-copy">{adminEntry ? 'Log in met de admincode om de missie te beheren.' : <>Vier gasten. Eén geheime opdracht.<br />Maaike rekent op jullie.</>}</p>
           <form className="access-form" onSubmit={enterMission}>
-            <label className="field-label" htmlFor="mission-code">JOUW TOEGANGSCODE</label>
+            <label className="field-label" htmlFor="mission-code">{adminEntry ? 'ADMIN-TOEGANGSCODE' : 'JOUW TOEGANGSCODE'}</label>
             <div className="access-input-wrap">
               <KeyRound size={17} />
-              <input id="mission-code" data-testid="input-access-code" value={code} onChange={(event) => setCode(event.target.value)} placeholder="Voer je code in" autoComplete="one-time-code" required maxLength={100} />
+              <input id="mission-code" data-testid="input-access-code" type={adminEntry ? 'password' : 'text'} value={code} onChange={(event) => setCode(event.target.value)} placeholder={adminEntry ? 'Voer de admincode in' : 'Voer je code in'} autoComplete={adminEntry ? 'current-password' : 'one-time-code'} required maxLength={100} />
               <button className="access-submit" data-testid="button-enter-mission" type="submit" disabled={createSession.isPending || !code.trim()} aria-label="Start de missie">
                 {createSession.isPending ? <RefreshCw className="spin" size={18} /> : <ChevronRight size={21} />}
               </button>
@@ -541,10 +551,19 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/admin" component={AdminLoginRoute} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
   );
+}
+
+function Home() {
+  return <MissionHome adminEntry={false} />;
+}
+
+function AdminLoginRoute() {
+  return <MissionHome adminEntry />;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
