@@ -1,15 +1,16 @@
-# [Project name]
+# Missie Maaike
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Een Nederlandstalige raadselmissie voor vier gasten die samen naar Maaikes verjaardagsdiner worden geleid.
 
 ## Run & Operate
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/missie-maaike run dev` — run the website
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required environment: `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_CODE`
 
 ## Stack
 
@@ -22,15 +23,24 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/missie-maaike/` — player website, admin control room, and practice mini-games.
+- `artifacts/api-server/src/lib/mission-data.ts` — private player codes, puzzle answers, hints, and event schedule.
+- `artifacts/api-server/src/routes/mission.ts` — session, answer validation, shared progress, and timed reveals.
+- `lib/db/src/schema/mission-answers.ts` — persistent answers and progress.
+- `lib/api-spec/openapi.yaml` — source contract for generated API hooks and validation schemas.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Puzzle answer keys and access codes stay on the server; locked question text and final locations are withheld until release.
+- Player and admin sessions use signed, HttpOnly cookies; `SESSION_SECRET` signs sessions and `ADMIN_CODE` grants control-room access.
+- The four personal date answers unlock the group gate; shared progress is stored in PostgreSQL.
+- Mission timing is fixed for 31 October 2026 in the Netherlands (UTC+01:00).
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Four guests use personal codes to solve timed dossiers, see shared progress, complete the team gate, and reveal the meetup and restaurant at scheduled times.
+- A separate admin view monitors all four players and the answer log.
+- Primary device is a mobile phone; tablet is secondary. Desktop use is not a priority.
 
 ## User preferences
 

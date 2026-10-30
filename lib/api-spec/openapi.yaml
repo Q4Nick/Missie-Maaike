@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API voor de Missie Maaike-raadselroute
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: missie
+    description: Missie, voortgang en antwoorden
 paths:
   /healthz:
     get:
@@ -24,6 +26,95 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /missie/session:
+    post:
+      operationId: createMissionSession
+      tags: [missie]
+      summary: Start een spelers- of spelleidersessie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MissionAccessInput"
+      responses:
+        "200":
+          description: Sessie gestart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionState"
+        "401":
+          description: Ongeldige toegangscode
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    get:
+      operationId: getMissionState
+      tags: [missie]
+      summary: Haal de actuele missie en gedeelde voortgang op
+      responses:
+        "200":
+          description: Actuele missie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionState"
+        "401":
+          description: Geen geldige sessie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /missie/session/end:
+    post:
+      operationId: endMissionSession
+      tags: [missie]
+      summary: Beëindig de huidige sessie
+      responses:
+        "200":
+          description: Sessie beëindigd
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionEnded"
+  /missie/answers:
+    post:
+      operationId: submitMissionAnswer
+      tags: [missie]
+      summary: Controleer en bewaar een antwoord
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MissionAnswerInput"
+      responses:
+        "200":
+          description: Antwoord gecontroleerd
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerResult"
+        "400":
+          description: Ongeldige opdracht of invoer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Geen geldige spelersessie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Opdracht is nog vergrendeld
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +124,150 @@ components:
           type: string
       required:
         - status
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    MissionAccessInput:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required: [code]
+    MissionAnswerInput:
+      type: object
+      properties:
+        puzzleIndex:
+          type: integer
+          minimum: 0
+          maximum: 31
+        answer:
+          type: string
+          maxLength: 100
+      required: [puzzleIndex, answer]
+    SessionEnded:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+    AnswerResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+        message:
+          type: string
+      required: [correct, message]
+    MissionAgent:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+      required: [id, label]
+    MissionPlayerProgress:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        solved:
+          type: array
+          items:
+            type: integer
+        done:
+          type: boolean
+        fragment:
+          type: [string, "null"]
+        updatedAt:
+          type: [string, "null"]
+          format: date-time
+      required: [id, label, solved, done, fragment, updatedAt]
+    MissionPuzzle:
+      type: object
+      properties:
+        index:
+          type: integer
+        at:
+          type: string
+        kind:
+          type: string
+          enum: [main, bonus]
+        title:
+          type: string
+        question:
+          type: string
+        hint:
+          type: string
+        solved:
+          type: boolean
+        available:
+          type: boolean
+      required: [index, at, kind, title, question, hint, solved, available]
+    MissionAnswer:
+      type: object
+      properties:
+        agent:
+          type: string
+        puzzle:
+          type: integer
+        answer:
+          type: string
+        correct:
+          type: boolean
+        updatedAt:
+          type: string
+          format: date-time
+      required: [agent, puzzle, answer, correct, updatedAt]
+    MissionState:
+      type: object
+      properties:
+        agent:
+          oneOf:
+            - $ref: "#/components/schemas/MissionAgent"
+            - type: "null"
+        admin:
+          type: boolean
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionPlayerProgress"
+        groupComplete:
+          type: boolean
+        puzzles:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionPuzzle"
+        special:
+          type: [string, "null"]
+        answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionAnswer"
+        serverNow:
+          type: string
+          format: date-time
+        rendezvous:
+          $ref: "#/components/schemas/MissionRendezvous"
+      required: [agent, admin, people, groupComplete, puzzles, special, answers, serverNow, rendezvous]
+    MissionRendezvous:
+      type: object
+      properties:
+        stage:
+          type: string
+          enum: [locked, meetup, destination]
+        message:
+          type: string
+        location:
+          type: [string, "null"]
+        destination:
+          type: [string, "null"]
+      required: [stage, message, location, destination]
 
