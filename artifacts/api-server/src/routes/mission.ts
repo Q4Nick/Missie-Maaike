@@ -5,10 +5,12 @@ import {
   CreateMissionSessionResponse,
   EndMissionSessionResponse,
   GetMissionStateResponse,
+  OpenMissionPuzzleBody,
+  OpenMissionPuzzleResponse,
   SubmitMissionAnswerBody,
   SubmitMissionAnswerResponse,
 } from "@workspace/api-zod";
-import { db, missionAnswersTable } from "@workspace/db";
+import { db, missionAnswersTable, missionPuzzleOpensTable } from "@workspace/db";
 import {
   AGENTS,
   FRAGMENTS,
@@ -28,6 +30,8 @@ import {
 
 const router: IRouter = Router();
 const SPECIAL_INDEX = 31;
+const MORSE_PUZZLE_INDEX = 8;
+const MORSE_HINT_DELAY_MS = 5 * 60 * 1000;
 const GROUP_GATE = Date.parse("2026-10-31T15:00:00+01:00");
 const MEETUP_REVEAL = Date.parse("2026-10-31T17:45:00+01:00");
 const DESTINATION_REVEAL = Date.parse("2026-10-31T18:15:00+01:00");
@@ -35,6 +39,20 @@ const DESTINATION_REVEAL = Date.parse("2026-10-31T18:15:00+01:00");
 async function buildMissionState(identity: MissionIdentity) {
   const now = Date.now();
   const rows = await db.select().from(missionAnswersTable);
+  const morseOpenRows =
+    identity.role === "agent"
+      ? await db
+          .select({ openedAt: missionPuzzleOpensTable.openedAt })
+          .from(missionPuzzleOpensTable)
+          .where(
+            and(
+              eq(missionPuzzleOpensTable.agent, identity.agentId),
+              eq(missionPuzzleOpensTable.puzzle, MORSE_PUZZLE_INDEX),
+            ),
+          )
+          .limit(1)
+      : [];
+  const morseOpenedAt = morseOpenRows[0]?.openedAt ?? null;
   const ownRows =
     identity.role === "agent"
       ? rows.filter((row) => row.agent === identity.agentId && row.correct)
@@ -97,26 +115,25 @@ async function buildMissionState(identity: MissionIdentity) {
     admin: identity.role === "admin",
     people,
     groupComplete,
-    puzzles: PUZZLES.map((puzzle, index) => ({
-      index,
-      at: puzzle.at,
-      kind: puzzle.kind,
-      title: puzzle.title,
-      question:
+    puzzles: PUZZLES.map((puzzle, index) => {
+      const available =
         now >= unlockMs(puzzle.at) &&
-        (unlockMs(puzzle.at) <= GROUP_GATE || groupComplete)
-          ? puzzle.question
-          : "",
-      hint:
-        now >= unlockMs(puzzle.at) &&
-        (unlockMs(puzzle.at) <= GROUP_GATE || groupComplete)
-          ? puzzle.hint
-          : "",
-      solved: ownRows.some((row) => row.puzzle === index),
-      available:
-        now >= unlockMs(puzzle.at) &&
-        (unlockMs(puzzle.at) <= GROUP_GATE || groupComplete),
-    })),
+        (unlockMs(puzzle.at) <= GROUP_GATE || groupComplete);
+      const morseHintReleased =
+        index !== MORSE_PUZZLE_INDEX ||
+        identity.role === "admin" ||
+        (morseOpenedAt !== null && now >= morseOpenedAt.getTime() + MORSE_HINT_DELAY_MS);
+      return {
+        index,
+        at: puzzle.at,
+        kind: puzzle.kind,
+        title: puzzle.title,
+        question: available ? puzzle.question : "",
+        hint: available && morseHintReleased ? puzzle.hint : "",
+        solved: ownRows.some((row) => row.puzzle === index),
+        available,
+      };
+    }),
     special: ownAgent && now >= GROUP_GATE ? specialQuestion(ownAgent.id) : null,
     answers:
       identity.role === "admin"
@@ -170,6 +187,60 @@ router.get("/missie/session", async (req, res): Promise<void> => {
 router.post("/missie/session/end", (req, res): void => {
   clearMissionSession(res);
   res.json(EndMissionSessionResponse.parse({ ok: true }));
+});
+
+router.post("/missie/puzzles/open", async (req, res): Promise<void> => {
+  const identity = getMissionIdentity(req);
+  if (!identity || identity.role !== "agent") {
+    res.status(401).json({ error: "Meld je aan met je persoonlijke agentcode." });
+    return;
+  }
+
+  const input = OpenMissionPuzzleBody.safeParse(req.body);
+  if (!input.success) {
+    res.status(400).json({ error: "Dit dossier kan niet worden geopend." });
+    return;
+  }
+
+  const puzzleIndex = input.data.puzzleIndex;
+  const puzzle = PUZZLES[puzzleIndex];
+  if (!puzzle) {
+    res.status(400).json({ error: "Dit dossier bestaat niet." });
+    return;
+  }
+
+  const now = Date.now();
+  const unlockAt = unlockMs(puzzle.at);
+  if (now < unlockAt) {
+    res.status(403).json({ error: "Dit dossier is nog vergrendeld." });
+    return;
+  }
+
+  const inserted = await db
+    .insert(missionPuzzleOpensTable)
+    .values({ agent: identity.agentId, puzzle: puzzleIndex })
+    .onConflictDoNothing()
+    .returning({ openedAt: missionPuzzleOpensTable.openedAt });
+  let openedAt = inserted[0]?.openedAt;
+  if (!openedAt) {
+    const existing = await db
+      .select({ openedAt: missionPuzzleOpensTable.openedAt })
+      .from(missionPuzzleOpensTable)
+      .where(
+        and(
+          eq(missionPuzzleOpensTable.agent, identity.agentId),
+          eq(missionPuzzleOpensTable.puzzle, puzzleIndex),
+        ),
+      )
+      .limit(1);
+    openedAt = existing[0]?.openedAt;
+  }
+  if (!openedAt) {
+    res.status(500).json({ error: "De openingstijd kon niet worden opgeslagen." });
+    return;
+  }
+
+  res.json(OpenMissionPuzzleResponse.parse({ openedAt: openedAt.toISOString() }));
 });
 
 router.post("/missie/answers", async (req, res): Promise<void> => {

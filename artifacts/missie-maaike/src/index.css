@@ -451,6 +451,17 @@ button { cursor: pointer; }
 .question-box p { font-size:15px; line-height:1.7; margin:9px 0 0; white-space:pre-wrap; }
 .hint-box { display:flex; gap:10px; align-items:flex-start; margin-top:13px; padding:13px 14px; color:#527468; background:#e2efe7; border:1px solid #cbded2; }
 .hint-box svg { flex:none; margin-top:2px; color:#28836b; }.hint-box p { margin:0; font-size:11px; line-height:1.6; }.hint-box strong { color:#316a59; margin-right:5px; }
+.morse-hint-area { margin-top:13px; }
+.morse-hint-button { display:flex; align-items:center; gap:9px; width:100%; min-height:48px; padding:10px 14px; border:1px solid #c1d8ca; background:#e2efe7; color:#316a59; text-align:left; font:500 10px var(--app-font-mono); letter-spacing:.12em; }
+.morse-hint-button:hover,.morse-hint-button:focus-visible { border-color:#70ad91; background:#d7ebdf; outline:none; }
+.morse-hint-button svg:last-child { margin-left:auto; }
+.morse-hint-box { width:100%; margin-top:0; }
+.morse-key-content { flex:1; min-width:0; }
+.morse-key-content>strong { color:#316a59; font-size:11px; }
+.morse-key-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px 12px; margin-top:9px; }
+.morse-key-entry { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 6px; border-bottom:1px solid #cadfd2; color:#55766a; font:9px var(--app-font-mono); }
+.morse-key-entry strong { color:#316a59; font-weight:600; }
+.morse-key-entry span { color:#315a50; letter-spacing:.1em; }
 .answer-form { margin-top:26px; }.answer-entry { display:flex; min-height:53px; border:1px solid #c6d7d0; background:#fff; }
 .answer-entry:focus-within { border-color:#28977b; }
 .answer-entry input { color:#203a43; padding:0 14px; font-size:13px; }.answer-entry input::placeholder { color:#93a6a0; }

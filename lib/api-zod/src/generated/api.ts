@@ -146,3 +146,15 @@ export const SubmitMissionAnswerResponse = zod.object({
 })
 
 
+/**
+ * @summary Registreer de eerste opening van een raadsel
+ */
+export const OpenMissionPuzzleBody = zod.object({
+  "puzzleIndex": zod.literal(8)
+})
+
+export const OpenMissionPuzzleResponse = zod.object({
+  "openedAt": zod.coerce.date()
+})
+
+

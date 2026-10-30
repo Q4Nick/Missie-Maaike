@@ -32,6 +32,7 @@ Een Nederlandstalige raadselmissie voor vier gasten die samen naar Maaikes verja
 ## Architecture decisions
 
 - Puzzle answer keys and access codes stay on the server; locked question text and final locations are withheld until release.
+- The Morse alphabet hint stays withheld server-side until five minutes after a player's first dossier opening.
 - Player and admin sessions use signed, HttpOnly cookies; `SESSION_SECRET` signs sessions and `ADMIN_CODE` grants control-room access.
 - The four personal date answers unlock the group gate; shared progress is stored in PostgreSQL.
 - Mission timing is fixed for 31 October 2026 in the Netherlands (UTC+01:00).

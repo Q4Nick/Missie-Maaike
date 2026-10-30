@@ -31,6 +31,21 @@ export interface MissionAnswerInput {
   answer: string;
 }
 
+export type MissionPuzzleOpenInputPuzzleIndex = typeof MissionPuzzleOpenInputPuzzleIndex[keyof typeof MissionPuzzleOpenInputPuzzleIndex];
+
+
+export const MissionPuzzleOpenInputPuzzleIndex = {
+  NUMBER_8: 8,
+} as const;
+
+export interface MissionPuzzleOpenInput {
+  puzzleIndex: MissionPuzzleOpenInputPuzzleIndex;
+}
+
+export interface MissionPuzzleOpenResult {
+  openedAt: string;
+}
+
 export interface SessionEnded {
   ok: boolean;
 }

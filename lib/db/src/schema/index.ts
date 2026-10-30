@@ -18,3 +18,4 @@
 //   export type Post = typeof postsTable.$inferSelect;
 
 export * from "./mission-answers";
+export * from "./mission-puzzle-opens";

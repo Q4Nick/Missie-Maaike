@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import {
   getGetMissionStateQueryKey, useCreateMissionSession, useEndMissionSession,
-  useGetMissionState, useSubmitMissionAnswer,
+  useGetMissionState, useOpenMissionPuzzle, useSubmitMissionAnswer,
 } from '@workspace/api-client-react';
 import type { MissionState } from '@workspace/api-client-react';
 import {
@@ -22,6 +22,7 @@ import {
 } from 'wouter';
 
 const queryClient = new QueryClient();
+const MORSE_PUZZLE_INDEX = 8;
 
 function timeLabel(value: string | null | undefined) {
   if (!value) return '—';
@@ -38,14 +39,20 @@ function Home() {
   });
   const createSession = useCreateMissionSession();
   const endSession = useEndMissionSession();
+  const openMissionPuzzle = useOpenMissionPuzzle();
   const submitAnswer = useSubmitMissionAnswer();
   const [code, setCode] = useState('');
   const [accessError, setAccessError] = useState('');
   const [answer, setAnswer] = useState('');
   const [answerMessage, setAnswerMessage] = useState('');
   const [selectedPuzzle, setSelectedPuzzle] = useState<number | null>(null);
+  const [morseHintRevealed, setMorseHintRevealed] = useState(false);
 
   const mission = missionQuery.data;
+  const isMorsePuzzleOpen = selectedPuzzle === MORSE_PUZZLE_INDEX;
+  const morseStoragePrefix = mission?.agent?.id
+    ? `missie-maaike:${mission.agent.id}:dossier-${MORSE_PUZZLE_INDEX}`
+    : null;
   const activePuzzle = useMemo(
     () => {
       if (!mission || selectedPuzzle === null) return null;
@@ -58,6 +65,21 @@ function Home() {
     },
     [mission, selectedPuzzle],
   );
+  useEffect(() => {
+    if (!isMorsePuzzleOpen || !morseStoragePrefix) {
+      setMorseHintRevealed(false);
+      return;
+    }
+
+    const revealedKey = `${morseStoragePrefix}:hint-revealed`;
+    try {
+      setMorseHintRevealed(window.localStorage.getItem(revealedKey) === '1');
+    } catch {
+      setMorseHintRevealed(false);
+    }
+  }, [isMorsePuzzleOpen, morseStoragePrefix]);
+
+  const morseHintAvailable = isMorsePuzzleOpen && Boolean(activePuzzle?.hint);
   const completedCount = mission?.people.reduce((total, person) => total + person.solved.length, 0) ?? 0;
   const puzzleTotal = mission?.puzzles.length ?? 31;
 
@@ -98,6 +120,34 @@ function Home() {
     } catch {
       setAnswerMessage('Antwoord kon niet worden verstuurd. Controleer de verbinding en probeer opnieuw.');
     }
+  }
+
+  function openDossier(index: number) {
+    setSelectedPuzzle(index);
+    setAnswerMessage('');
+    if (index !== MORSE_PUZZLE_INDEX) return;
+
+    openMissionPuzzle.mutate(
+      { data: { puzzleIndex: MORSE_PUZZLE_INDEX } },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries({ queryKey: getGetMissionStateQueryKey() });
+        },
+        onError: () => {
+          setAnswerMessage('De opening kon niet worden opgeslagen. Controleer je verbinding en open het dossier opnieuw.');
+        },
+      },
+    );
+  }
+
+  function revealMorseHint() {
+    if (!morseStoragePrefix || !morseHintAvailable) return;
+    try {
+      window.localStorage.setItem(`${morseStoragePrefix}:hint-revealed`, '1');
+    } catch {
+      // Keep the hint available for this open drawer if browser storage is disabled.
+    }
+    setMorseHintRevealed(true);
   }
 
   if (missionQuery.isLoading && !mission) return <LoadingScreen />;
@@ -198,7 +248,7 @@ function Home() {
             {mission.puzzles.filter((puzzle) => puzzle.index !== 31).map((puzzle, index) => {
               const solved = solvedSet.has(puzzle.index);
               const isSelected = selectedPuzzle === puzzle.index;
-              return <button className={`dossier-card ${solved ? 'dossier-solved' : ''} ${isSelected ? 'dossier-selected' : ''} ${!puzzle.available ? 'dossier-locked' : ''}`} key={puzzle.index} disabled={!puzzle.available} onClick={() => { setSelectedPuzzle(puzzle.index); setAnswerMessage(''); }} data-testid={`button-open-puzzle-${puzzle.index}`}>
+              return <button className={`dossier-card ${solved ? 'dossier-solved' : ''} ${isSelected ? 'dossier-selected' : ''} ${!puzzle.available ? 'dossier-locked' : ''}`} key={puzzle.index} disabled={!puzzle.available} onClick={() => openDossier(puzzle.index)} data-testid={`button-open-puzzle-${puzzle.index}`}>
                 <span className="dossier-top"><span className="dossier-number">{String(puzzle.index).padStart(2, '0')}</span>{solved ? <span className="dossier-status completed"><Check size={12} /> BINNEN</span> : !puzzle.available ? <span className="dossier-status locked-label"><LockKeyhole size={11} /> VERGRENDELD</span> : <span className="dossier-status"><span className="status-point" /> {puzzle.kind === 'bonus' ? 'BONUS' : puzzle.at}</span>}</span>
                 <strong>{puzzle.title}</strong><span className="dossier-kind">{puzzle.kind === 'bonus' ? 'EXTRA OPERATIE' : 'GECLASSIFICEERD DOSSIER'}</span>
                 <span className="dossier-bottom"><span>{solved ? 'DOSSIER GESLOTEN' : puzzle.available ? 'DOSSIER OPENEN' : 'WACHT OP VRIJGAVE'}</span>{puzzle.available && <ChevronRight size={15} />}</span>
@@ -223,7 +273,23 @@ function Home() {
           <div className="drawer-number mono">DOSSIER {String(activePuzzle.index).padStart(2, '0')}</div>
           <h2 id="puzzle-title" className="drawer-title display">{activePuzzle.title}</h2>
           <div className="question-box"><span>OPDRACHT</span><p>{activePuzzle.question}</p></div>
-          {activePuzzle.hint && <div className="hint-box"><CircleHelp size={16} /><p><strong>Hint</strong> {activePuzzle.hint}</p></div>}
+          {isMorsePuzzleOpen ? !solvedSet.has(activePuzzle.index) && <div className="morse-hint-area" aria-live="polite">
+            {morseHintRevealed ? <div className="hint-box morse-hint-box">
+              <CircleHelp size={16} />
+              <div className="morse-key-content">
+                <strong>Volledig Morsealfabet</strong>
+                <div className="morse-key-grid">
+                  {activePuzzle.hint.split(';').map((entry) => {
+                    const [letter, code] = entry.trim().split(/\s+/);
+                    if (!letter || !code) return null;
+                    return <div className="morse-key-entry" key={letter}><strong>{letter}</strong><span>{code}</span></div>;
+                  })}
+                </div>
+              </div>
+            </div> : morseHintAvailable && <button className="morse-hint-button" type="button" onClick={revealMorseHint}>
+              <CircleHelp size={16} /><span>HINT TONEN</span><ChevronRight size={15} />
+            </button>}
+          </div> : activePuzzle.hint && <div className="hint-box"><CircleHelp size={16} /><p><strong>Hint</strong> {activePuzzle.hint}</p></div>}
           {solvedSet.has(activePuzzle.index) ? <div className="solved-banner"><BadgeCheck size={18} /><span>Dit dossier is door jou afgehandeld.</span></div> : <form className="answer-form" onSubmit={sendAnswer}>
             <label className="field-label" htmlFor="answer-entry">JOUW ANTWOORD</label>
             <div className="answer-entry"><input id="answer-entry" data-testid="input-mission-answer" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Typ je antwoord…" maxLength={100} autoComplete="off" /><button type="submit" disabled={!answer.trim() || submitAnswer.isPending} data-testid="button-submit-answer">{submitAnswer.isPending ? <RefreshCw size={17} className="spin" /> : <><span>VERSTUUR</span><Send size={15} /></>}</button></div>

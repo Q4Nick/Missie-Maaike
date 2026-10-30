@@ -115,6 +115,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /missie/puzzles/open:
+    post:
+      operationId: openMissionPuzzle
+      tags: [missie]
+      summary: Registreer de eerste opening van een raadsel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MissionPuzzleOpenInput"
+      responses:
+        "200":
+          description: Eerste opening geregistreerd
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionPuzzleOpenResult"
+        "400":
+          description: Ongeldig raadsel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Geen geldige spelersessie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Raadsel is nog vergrendeld
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
     HealthStatus:
@@ -149,6 +185,20 @@ components:
           type: string
           maxLength: 100
       required: [puzzleIndex, answer]
+    MissionPuzzleOpenInput:
+      type: object
+      properties:
+        puzzleIndex:
+          type: integer
+          enum: [8]
+      required: [puzzleIndex]
+    MissionPuzzleOpenResult:
+      type: object
+      properties:
+        openedAt:
+          type: string
+          format: date-time
+      required: [openedAt]
     SessionEnded:
       type: object
       properties:
