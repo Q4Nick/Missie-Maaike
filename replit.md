@@ -34,12 +34,13 @@ Een Nederlandstalige raadselmissie voor vier gasten die samen naar Maaikes verja
 - Puzzle answer keys and access codes stay on the server; locked question text and final locations are withheld until release.
 - The Morse alphabet hint stays withheld server-side until five minutes after a player's first dossier opening.
 - Player and admin sessions use signed, HttpOnly cookies; `SESSION_SECRET` signs sessions and `ADMIN_CODE` grants control-room access.
-- The four personal date answers unlock the group gate; shared progress is stored in PostgreSQL.
-- Mission timing is fixed for 31 October 2026 in the Netherlands (UTC+01:00).
+- The four personal coordinate fragments unlock the group gate; shared progress is stored in PostgreSQL.
+- The restaurant coordinates are revealed to all players immediately after all four personal answers are correct, with arrival time 18:15.
+- Puzzle release timing is fixed for 31 October 2026 in the Netherlands (UTC+01:00).
 
 ## Product
 
-- Four guests use personal codes to solve timed dossiers, see shared progress, complete the team gate, and reveal the meetup and restaurant at scheduled times.
+- Four guests use personal codes to solve timed dossiers, see shared progress, combine their personal coordinate fragments, and reveal the restaurant location.
 - A separate admin view monitors all four players and the answer log.
 - Primary device is a mobile phone; tablet is secondary. Desktop use is not a priority.
 

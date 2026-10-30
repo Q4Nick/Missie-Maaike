@@ -35,7 +35,7 @@ function timeLabel(value: string | null | undefined) {
 function Home() {
   const queryClient = useQueryClient();
   const missionQuery = useGetMissionState({
-    query: { queryKey: getGetMissionStateQueryKey(), refetchInterval: 3000, retry: false },
+    query: { queryKey: getGetMissionStateQueryKey(), refetchInterval: 5000, refetchIntervalInBackground: false, retry: false },
   });
   const createSession = useCreateMissionSession();
   const endSession = useEndMissionSession();
@@ -47,6 +47,7 @@ function Home() {
   const [answerMessage, setAnswerMessage] = useState('');
   const [selectedPuzzle, setSelectedPuzzle] = useState<number | null>(null);
   const [morseHintRevealed, setMorseHintRevealed] = useState(false);
+  const [manualRefreshing, setManualRefreshing] = useState(false);
 
   const mission = missionQuery.data;
   const isMorsePuzzleOpen = selectedPuzzle === MORSE_PUZZLE_INDEX;
@@ -104,6 +105,15 @@ function Home() {
         await queryClient.resetQueries({ queryKey: getGetMissionStateQueryKey() });
       },
     });
+  }
+
+  async function refreshMissionManually() {
+    setManualRefreshing(true);
+    try {
+      await missionQuery.refetch();
+    } finally {
+      setManualRefreshing(false);
+    }
   }
 
   async function sendAnswer(event: FormEvent<HTMLFormElement>) {
@@ -185,7 +195,7 @@ function Home() {
   }
 
   if (mission.admin) return (
-    <AdminRoom mission={mission} onLeave={leaveMission} leaving={endSession.isPending} onRefresh={() => missionQuery.refetch()} refreshing={missionQuery.isFetching} />
+    <AdminRoom mission={mission} onLeave={leaveMission} leaving={endSession.isPending} onRefresh={refreshMissionManually} refreshing={manualRefreshing} />
   );
 
   const agent = mission.agent;
@@ -309,13 +319,15 @@ function LoadingScreen() {
 function RendezvousCard({ rendezvous }: { rendezvous: MissionState['rendezvous'] }) {
   const isLocked = rendezvous.stage === 'locked';
   const isMeetup = rendezvous.stage === 'meetup';
-  const title = isLocked ? 'Rendez-vous vergrendeld' : isMeetup ? 'Tijd voor de ontmoeting' : 'De eindbestemming is bekend';
+  const isDestination = rendezvous.stage === 'destination';
+  const title = isLocked ? 'Rendez-vous vergrendeld' : isMeetup ? 'Tijd voor de ontmoeting' : 'De locatie is gevonden';
   const reveal = isMeetup ? rendezvous.location : rendezvous.stage === 'destination' ? rendezvous.destination : null;
   return <section className={`final-reveal rendezvous-card ${isLocked ? 'rendezvous-locked' : ''}`} data-testid="status-rendezvous">
     <div className="reveal-top">{isLocked ? <LockKeyhole size={16} /> : <Sparkles size={16} />}<span>{isLocked ? 'GEZAMENLIJKE ONTGRENDELING' : isMeetup ? 'RENDEZ-VOUS · MEETUP' : 'RENDEZ-VOUS · FINALE'}</span></div>
     <h2 className="display">{title}</h2>
     <p>{rendezvous.message}</p>
-    {reveal && <div className="rendezvous-location"><span>{isMeetup ? 'MEETUP-LOCATIE' : 'EINDBESTEMMING'}</span><strong>{reveal}</strong></div>}
+    {reveal && <div className="rendezvous-location"><span>{isMeetup ? 'MEETUP-LOCATIE' : 'RESTAURANTCOÖRDINATEN'}</span><strong>{reveal}</strong></div>}
+    {isDestination && <div className="rendezvous-time"><span>AANKOMSTTIJD</span><strong>18:15</strong></div>}
   </section>;
 }
 
@@ -505,7 +517,7 @@ function AdminRoom({ mission, onLeave, leaving, onRefresh, refreshing }: {
           <div className="operation-stats"><div><span>TOTAAL CORRECT</span><strong>{solvedAnswers.toString().padStart(2, '0')}</strong></div><div><span>DOSSIERS</span><strong>{mission.puzzles.length.toString().padStart(2, '0')}</strong></div></div>
           <div className="operation-progress"><div><span>GEDEELDE VOORTGANG</span><strong>{Math.round((totalSolved / totalPossible) * 100)}%</strong></div><div className="progress-track"><span style={{ width: `${(totalSolved / totalPossible) * 100}%` }} /></div></div>
           <div className={`reveal-status ${mission.rendezvous.stage !== 'locked' ? 'revealed' : ''}`} data-testid="status-rendezvous-admin"><div>{mission.rendezvous.stage === 'locked' ? <LockKeyhole size={16} /> : <Sparkles size={17} />}</div><span><strong>{mission.rendezvous.stage === 'locked' ? 'Rendez-vous vergrendeld' : mission.rendezvous.stage === 'meetup' ? 'Meetup vrijgegeven' : 'Eindbestemming vrijgegeven'}</strong><small>{mission.rendezvous.message}</small></span></div>
-          {mission.rendezvous.stage !== 'locked' && <div className="admin-special"><span>{mission.rendezvous.stage === 'meetup' ? 'MEETUP-LOCATIE' : 'EINDBESTEMMING'}</span><strong>{mission.rendezvous.stage === 'meetup' ? mission.rendezvous.location : mission.rendezvous.destination}</strong></div>}
+          {mission.rendezvous.stage !== 'locked' && <div className="admin-special"><span>{mission.rendezvous.stage === 'meetup' ? 'MEETUP-LOCATIE' : 'RESTAURANTCOÖRDINATEN'}</span><strong>{mission.rendezvous.stage === 'meetup' ? mission.rendezvous.location : mission.rendezvous.destination}</strong>{mission.rendezvous.stage === 'destination' && <><span>AANKOMSTTIJD</span><strong>18:15</strong></>}</div>}
         </section>
       </div>
       <footer className="admin-footer"><span>MISSIE MAAIKE <i>/ CONTROL ROOM</i></span><span><Wifi size={13} /> SYNCHRONISATIE OM DE 3 SECONDEN</span></footer>

@@ -13,6 +13,7 @@ import {
 import { db, missionAnswersTable, missionPuzzleOpensTable } from "@workspace/db";
 import {
   AGENTS,
+  DESTINATION_COORDINATES,
   FRAGMENTS,
   PUZZLES,
   getAgent,
@@ -33,8 +34,6 @@ const SPECIAL_INDEX = 31;
 const MORSE_PUZZLE_INDEX = 8;
 const MORSE_HINT_DELAY_MS = 5 * 60 * 1000;
 const GROUP_GATE = Date.parse("2026-10-31T15:00:00+01:00");
-const MEETUP_REVEAL = Date.parse("2026-10-31T17:45:00+01:00");
-const DESTINATION_REVEAL = Date.parse("2026-10-31T18:15:00+01:00");
 
 async function buildMissionState(identity: MissionIdentity) {
   const now = Date.now();
@@ -59,7 +58,14 @@ async function buildMissionState(identity: MissionIdentity) {
       : [];
   const people = AGENTS.map((agent) => {
     const correctRows = rows.filter((row) => row.agent === agent.id && row.correct);
-    const personalAnswer = correctRows.find((row) => row.puzzle === SPECIAL_INDEX);
+    const agentIndex = AGENTS.findIndex((candidate) => candidate.id === agent.id);
+    const personalAnswer = rows.find(
+      (row) =>
+        row.agent === agent.id &&
+        row.puzzle === SPECIAL_INDEX &&
+        row.correct &&
+        norm(row.answer) === norm(FRAGMENTS[agentIndex] ?? ""),
+    );
     const latest = rows
       .filter((row) => row.agent === agent.id)
       .reduce<Date | null>(
@@ -85,30 +91,16 @@ async function buildMissionState(identity: MissionIdentity) {
   const rendezvous = !groupComplete
     ? {
         stage: "locked" as const,
-        message: "Alle vier de agenten moeten eerst hun persoonlijke datumdeel invullen.",
+        message: "Alle vier de agenten moeten eerst hun persoonlijke coördinaatdeel invullen.",
         location: null,
         destination: null,
       }
-    : now >= DESTINATION_REVEAL
-      ? {
-          stage: "destination" as const,
-          message: "Nixtamal in Mijdrecht, aan de N201. Proost op Maaike!",
-          location: "Nixtamal, Mijdrecht — N201",
-          destination: "Nixtamal",
-        }
-      : now >= MEETUP_REVEAL
-        ? {
-            stage: "meetup" as const,
-            message: "Verzamel om 17:45 bij het afgesproken punt. Reis daarna samen verder.",
-            location: "Huisnummer 65, 3641 CK Mijdrecht",
-            destination: null,
-          }
-        : {
-            stage: "locked" as const,
-            message: "Om 17:45 verschijnt de verzamelplaats.",
-            location: null,
-            destination: null,
-          };
+    : {
+        stage: "destination" as const,
+        message: "Alle vier de delen zijn binnen. Jullie hebben de locatie gevonden. Zorg dat jullie er om 18:15 zijn.",
+        location: null,
+        destination: DESTINATION_COORDINATES,
+      };
 
   return GetMissionStateResponse.parse({
     agent: ownAgent ? { id: ownAgent.id, label: ownAgent.label } : null,
@@ -137,15 +129,21 @@ async function buildMissionState(identity: MissionIdentity) {
     special: ownAgent && now >= GROUP_GATE ? specialQuestion(ownAgent.id) : null,
     answers:
       identity.role === "admin"
-        ? rows.map((row) => ({
-            agent: row.agent,
-            puzzle: row.puzzle,
-            answer: row.answer,
-            correct: row.correct,
-            updatedAt: row.updatedAt.toISOString(),
-          }))
+          ? rows.map((row) => {
+              const agentIndex = AGENTS.findIndex((agent) => agent.id === row.agent);
+              const isCurrentPersonalAnswer =
+                row.puzzle !== SPECIAL_INDEX ||
+                (row.correct && norm(row.answer) === norm(FRAGMENTS[agentIndex] ?? ""));
+              return {
+                agent: row.agent,
+                puzzle: row.puzzle,
+                answer: row.answer,
+                correct: row.correct && isCurrentPersonalAnswer,
+                updatedAt: row.updatedAt.toISOString(),
+              };
+            })
         : [],
-    serverNow: new Date(now).toISOString(),
+    serverNow: new Date(Math.floor(now / 60_000) * 60_000).toISOString(),
     rendezvous,
   });
 }

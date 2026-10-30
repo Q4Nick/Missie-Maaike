@@ -581,7 +581,10 @@ button { cursor: pointer; }
 .rendezvous-card p { max-width:760px; }
 .rendezvous-location { position:relative; z-index:1; display:flex; flex-direction:column; gap:6px; width:fit-content; max-width:100%; margin-top:18px; padding:12px 15px; border:1px solid rgba(177,230,205,.26); background:rgba(10,48,49,.3); }
 .rendezvous-location span { color:#9fcdb7; font:8px var(--app-font-mono); letter-spacing:.13em; }
-.rendezvous-location strong { color:#f0f5ef; font:600 15px var(--app-font-serif); line-height:1.45; white-space:pre-wrap; }
+.rendezvous-location strong { color:#f0f5ef; font:600 15px var(--app-font-mono); line-height:1.45; overflow-wrap:anywhere; }
+.rendezvous-time { position:relative; z-index:1; display:flex; flex-direction:column; gap:4px; width:fit-content; margin-top:10px; padding:10px 15px; border-left:2px solid #65dcba; background:rgba(10,48,49,.24); }
+.rendezvous-time span { color:#9fcdb7; font:8px var(--app-font-mono); letter-spacing:.13em; }
+.rendezvous-time strong { color:#f0f5ef; font:600 21px var(--app-font-mono); }
 .minigames { margin-top:37px; }
 .minigame-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:15px; margin-bottom:16px; }
 .minigame-heading h2 { margin:7px 0 4px; font:600 24px var(--app-font-serif); letter-spacing:-.04em; color:#203a43; }

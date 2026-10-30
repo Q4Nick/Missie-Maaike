@@ -5,7 +5,8 @@ export const AGENTS=[
  {id:'charlie',label:'Nynke · Charlie',code:'M31-CHARLIE-9X'},
  {id:'delta',label:'Younes · Delta',code:'M31-DELTA-2P'},
 ] as const;
-export const FRAGMENTS=['26','10','20','26'];
+export const FRAGMENTS=['52.21875','28633283','4.87256','8152435787'] as const;
+export const DESTINATION_COORDINATES=`${FRAGMENTS[0]}${FRAGMENTS[1]}, ${FRAGMENTS[2]}${FRAGMENTS[3]}`;
 export function getAgent(code:string){return AGENTS.find(a=>a.code===code.trim().toUpperCase())}
 export type Puzzle={at:string;kind:'main'|'bonus';title:string;question:string;answer:string;hint:string};
 export const PUZZLES:Puzzle[]=[
@@ -44,8 +45,8 @@ export const PUZZLES:Puzzle[]=[
 export function unlockMs(at:string){const [h,m]=at.split(':').map(Number);return Date.parse('2026-10-31T12:00:00+01:00')+(h-12)*3600000+m*60000}
 export function norm(s:string){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
 export function specialQuestion(agent:string){const i=AGENTS.findIndex(a=>a.id===agent);return [
- 'Bij een datum is het eerste onderdeel de dag. Maaike is jarig op de dag die 5 minder is dan haar leeftijd. Welk getal?',
- 'Het tweede onderdeel is de maand. Oktober is de hoeveelste maand?',
- 'Het derde onderdeel is de eerste helft van het jaar waarin Maaikes 31e verjaardag valt. Welke twee cijfers?',
- 'Het vierde onderdeel zijn de laatste twee cijfers van het jaar waarin deze missie plaatsvindt. Welke twee cijfers?'
+ 'De breedtegraad begint met 52. Bereken de volgende vijf cijfers in deze volgorde: 3−1, 4−3, 2³, 10−3, √25. Schrijf alles als één code met een punt na 52.',
+ 'Je krijgt de rest van de breedtegraad. Bereken de uitkomsten en zet ze achter elkaar: 1+1 | 4+4 | 3×2 | 6÷2 | 1+2 | 1+1 | 4×2 | 1+2. Welk achtcijferig codefragment ontstaat?',
+ 'De lengtegraad begint met 4. Bereken daarna: 2³ | 10−3 | 1+1 | 2+3 | 3+3. Zet de vijf cijfers na een punt achter de 4.',
+ 'Bereken de uitkomsten en zet ze achter elkaar: 4+4 | 3−2 | 2+3 | 1+1 | 2+2 | 6÷2 | 2+3 | 10−3 | 2³ | 14÷2. Dit is het laatste codefragment van de lengtegraad.'
 ][i] || ''}
