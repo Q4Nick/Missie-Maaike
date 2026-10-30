@@ -102,10 +102,7 @@ function MissionHome({ adminEntry }: { adminEntry: boolean }) {
           <div className="top-signal"><span className="pulse-dot" /> VERBINDING BESCHIKBAAR</div>
         </header>
         <section className="access-content enter">
-          <div className="eyebrow"><span className="eyebrow-line" /> BESLOTEN OPERATIE <span className="eyebrow-line" /></div>
-          <Link className="admin-entry-link" href={adminEntry ? '/' : '/admin'}>
-            <span>{adminEntry ? 'Terug naar de missie' : 'Naar de adminomgeving'}</span><ChevronRight size={14} />
-          </Link>
+          <Link className="eyebrow admin-entry" href={adminEntry ? '/' : '/admin'} data-testid="link-admin-entry"><span className="eyebrow-line" /> BESLOTEN OPERATIE <span className="eyebrow-line" /></Link>
           <h1 className="access-title display">{adminEntry ? <>Admin<br /><em>omgeving.</em></> : <>Vanavond<br /><em>is niets</em><br />toeval.</>}</h1>
           <p className="access-copy">{adminEntry ? 'Log in met de admincode om de missie te beheren.' : <>Vier gasten. Eén geheime opdracht.<br />Maaike rekent op jullie.</>}</p>
           <form className="access-form" onSubmit={enterMission}>

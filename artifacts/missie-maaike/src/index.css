@@ -302,9 +302,8 @@ button { cursor: pointer; }
 .access-content { width:min(490px,90vw); margin:auto; padding:48px 0 66px; position:relative; z-index:1; }
 .eyebrow { color:#89a9a9; display:flex; align-items:center; justify-content:center; gap:10px; font:500 10px var(--app-font-mono); letter-spacing:.19em; }
 .eyebrow-line { width:24px; height:1px; background:#4a8582; }
-.admin-entry-link { display:flex; width:fit-content; min-height:40px; margin:5px auto 0; padding:0 10px; align-items:center; justify-content:center; gap:7px; color:#9fcdb7; font:500 9px var(--app-font-mono); letter-spacing:.1em; text-decoration:underline; text-decoration-color:rgba(159,205,183,.45); text-underline-offset:4px; transition:color .2s,text-decoration-color .2s; }
-.admin-entry-link:hover { color:#d5f2df; text-decoration-color:#d5f2df; }
-.admin-entry-link:focus-visible { outline:2px solid #57d5b1; outline-offset:2px; }
+.admin-entry { min-height:44px; text-decoration:none; }
+.admin-entry:focus-visible { outline:2px solid #57d5b1; outline-offset:2px; }
 .access-title { margin:29px 0 20px; font-size:clamp(64px,10.4vw,104px); letter-spacing:-.085em; line-height:.87; color:#ecf3ed; font-weight:600; }
 .access-title em,.welcome-title em,.final-reveal em { color:#65dcba; font-style:normal; }
 .access-copy { font-size:15px; line-height:1.8; color:#aac1be; letter-spacing:.01em; }
